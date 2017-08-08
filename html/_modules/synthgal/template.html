@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>synthgal.template &mdash; src  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="src  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for synthgal.template</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span><span class="p">,</span> <span class="n">ascii</span>
+<span class="kn">from</span> <span class="nn">astropy.table</span> <span class="kn">import</span> <span class="n">Table</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">integrate</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+
+<div class="viewcode-block" id="Template"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template">[docs]</a><span class="k">class</span> <span class="nc">Template</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class to read in BC03 templates.</span>
+
+<span class="sd">    BC03 templates are stored in the ``synthsrc/highztemplates`` directory </span>
+<span class="sd">    and are called ``[IMF]_[metal]_[SFH].fits``, where </span>
+
+<span class="sd">    - IMF is either `salp` or `chab` for Salpeter and Chabrier initial</span>
+<span class="sd">      mass functions, respectively; </span>
+
+<span class="sd">    - metal is the metallicity ranging from `m22` to `m62` (solar);</span>
+
+<span class="sd">    - SFH is one of `tau0p01`, `tau0p50`, and `tau5p00`, for exponentially</span>
+<span class="sd">      declining star formation histories with characteristic timescales</span>
+<span class="sd">      of 0.01, 0.5, and 5 Gyr, respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metallicity</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">ew</span><span class="p">,</span> <span class="n">redshift</span><span class="p">,</span> <span class="n">add_lines</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tempdir</span> <span class="o">=</span> <span class="s1">&#39;templates&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metallicity</span> <span class="o">=</span> <span class="n">metallicity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span> <span class="o">=</span> <span class="s1">&#39;bc2003_hr_</span><span class="si">%s</span><span class="s1">_chab_cSFR_100Myr.spec&#39;</span><span class="o">%</span><span class="n">metallicity</span>
+        <span class="c1"># 10 Myr age for all templates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mf">1.e7</span>
+        <span class="c1"># emission lines</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">haflux</span> <span class="o">=</span> <span class="n">flux</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">haew</span> <span class="o">=</span> <span class="n">ew</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redshift</span> <span class="o">=</span> <span class="n">redshift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line_ratios</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="s1">&#39;configs/line_ratios.fits&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_lines</span> <span class="o">=</span> <span class="n">add_lines</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wave</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_template</span><span class="p">()</span>
+ 
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_template</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    
+<div class="viewcode-block" id="Template.find_thing"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.find_thing">[docs]</a>    <span class="k">def</span> <span class="nf">find_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the array index of the element closest to value.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">array</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Template.read_template"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.read_template">[docs]</a>    <span class="k">def</span> <span class="nf">read_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plotcheck</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads in the BC03 template with the given metallicity.</span>
+
+<span class="sd">        Each template FITS table </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;templates&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span><span class="p">))</span>
+        <span class="n">wave</span> <span class="o">=</span> <span class="n">d</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">d</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># normalize the spectrum and scale to desired &quot;real&quot; flux units</span>
+        <span class="n">lobs</span><span class="p">,</span><span class="n">scaled_flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_template</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">)</span>
+
+        <span class="c1"># add emission lines to the scaled template</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_lines</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">template_flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_emission_lines</span><span class="p">(</span><span class="n">lobs</span><span class="p">,</span> <span class="n">scaled_flux</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plotcheck</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_spectrum</span><span class="p">(</span><span class="n">lobs</span><span class="p">,</span> <span class="n">scaled_flux</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_spectrum</span><span class="p">(</span><span class="n">lobs</span><span class="p">,</span> <span class="n">template_flux</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lobs</span><span class="p">,</span> <span class="n">scaled_flux</span></div>
+    
+
+<div class="viewcode-block" id="Template.normalize_template"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.normalize_template">[docs]</a>    <span class="k">def</span> <span class="nf">normalize_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">template_flux</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+        <span class="c1"># find 100A-wide region around Halpha</span>
+        <span class="n">w1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_thing</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="mf">6500.</span><span class="p">)</span>
+        <span class="n">w2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_thing</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="mf">6600.</span><span class="p">)</span>
+        <span class="c1"># template continuum value in this region</span>
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">template_flux</span><span class="p">[</span><span class="n">w1</span><span class="p">:</span><span class="n">w2</span><span class="p">])</span>
+        <span class="c1"># desired continuum given the flux and ew</span>
+        <span class="n">desired_cont</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">haflux</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">haew</span>
+        <span class="c1"># factor required to scale template to the desired &quot;real&quot; units</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">desired_cont</span> <span class="o">/</span> <span class="n">cont</span>
+
+        <span class="c1"># redshift template</span>
+        <span class="n">lobs</span> <span class="o">=</span> <span class="n">wave</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">redshift</span><span class="p">)</span>
+        <span class="c1"># scale template</span>
+        <span class="n">scaled_flux</span> <span class="o">=</span> <span class="n">template_flux</span> <span class="o">*</span> <span class="n">scale</span>
+        <span class="k">return</span> <span class="n">lobs</span><span class="p">,</span> <span class="n">scaled_flux</span></div>
+
+
+<div class="viewcode-block" id="Template.add_emission_lines"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.add_emission_lines">[docs]</a>    <span class="k">def</span> <span class="nf">add_emission_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Line ratios are with respect to Hbeta. </span>
+<span class="sd">        Assume Case B for ne = 1e2 cm^-3 and Te = 10000K: Halpha/Hbeta = 2.86</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">halpha_wave</span> <span class="o">=</span> <span class="mf">6563.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">redshift</span><span class="p">)</span>
+        <span class="n">hbeta_wave</span> <span class="o">=</span> <span class="mf">4861.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">redshift</span><span class="p">)</span>
+        <span class="n">hbeta_flux</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">haflux</span> <span class="o">/</span> <span class="mf">2.86</span>
+        <span class="c1"># line ratios will depend on metallicity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metallicity</span> <span class="o">==</span> <span class="s1">&#39;m62&#39;</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;m52_62_72_ratio&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_ratio&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">metallicity</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">haflux</span><span class="p">,</span> <span class="n">hbeta_flux</span><span class="p">],</span> 
+                           <span class="bp">self</span><span class="o">.</span><span class="n">line_ratios</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">*</span><span class="n">hbeta_flux</span><span class="p">)</span>
+        <span class="n">line_waves</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">redshift</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> 
+                               <span class="bp">self</span><span class="o">.</span><span class="n">line_ratios</span><span class="p">[</span><span class="s1">&#39;lambda&#39;</span><span class="p">]])</span>
+        <span class="n">waves</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">halpha_wave</span><span class="p">,</span> <span class="n">hbeta_wave</span><span class="p">],</span> <span class="n">line_waves</span><span class="p">)</span>
+
+        <span class="n">continuum_line</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span>
+
+        <span class="n">a</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="mf">3.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="n">line_center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_thing</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">waves</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="c1"># fill in absorption lines before adding emission</span>
+            <span class="c1"># go out 5 sig on both sides</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="p">((</span><span class="n">wave</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">-</span><span class="mi">20</span><span class="o">*</span><span class="n">sig</span><span class="p">))</span> <span class="o">&amp;</span> \
+                 <span class="p">(</span><span class="n">wave</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">-</span><span class="mi">10</span><span class="o">*</span><span class="n">sig</span><span class="p">)))</span> <span class="o">|</span> \
+                <span class="p">((</span><span class="n">wave</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">+</span><span class="mi">10</span><span class="o">*</span><span class="n">sig</span><span class="p">))</span> <span class="o">&amp;</span> \
+                 <span class="p">(</span><span class="n">wave</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">+</span><span class="mi">20</span><span class="o">*</span><span class="n">sig</span><span class="p">)))</span>
+            <span class="n">lc</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">-</span><span class="mi">10</span><span class="o">*</span><span class="n">sig</span><span class="p">))</span> <span class="o">&amp;</span> \
+                 <span class="p">(</span><span class="n">wave</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span><span class="o">+</span><span class="mi">10</span><span class="o">*</span><span class="n">sig</span><span class="p">))</span>
+            <span class="c1"># at z &gt; 2.3 or so, redder lines land where spectral templates</span>
+            <span class="c1"># are lower-resolution and too few elements lie within the region</span>
+            <span class="c1"># around line center. these lines will not be within the grisms</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">20000</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">flux</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">continuum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">wave</span><span class="p">[</span><span class="n">lc</span><span class="p">])</span>
+            <span class="n">flux</span><span class="p">[</span><span class="n">lc</span><span class="p">]</span> <span class="o">=</span> <span class="n">continuum</span>
+            <span class="n">gauss</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">wave</span><span class="o">-</span><span class="n">wave</span><span class="p">[</span><span class="n">line_center</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">sig</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+            <span class="c1"># normalize line profile so line flux is total flux in line</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">gauss</span><span class="p">,</span> <span class="n">wave</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">norm</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">profile</span> <span class="o">=</span> <span class="n">gauss</span> <span class="o">*</span> <span class="p">(</span><span class="n">line</span> <span class="o">/</span> <span class="n">norm</span><span class="p">)</span>
+                <span class="n">flux</span> <span class="o">+=</span> <span class="n">profile</span>
+
+        <span class="k">return</span> <span class="n">flux</span> </div>
+
+
+<div class="viewcode-block" id="Template.write_template"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.write_template">[docs]</a>    <span class="k">def</span> <span class="nf">write_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">wave</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flux</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;wave&#39;</span><span class="p">,</span><span class="s1">&#39;flux&#39;</span><span class="p">))</span>
+        <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;commented_header&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Template.plot_spectrum"><a class="viewcode-back" href="../../synthgal.html#synthgal.template.Template.plot_spectrum">[docs]</a>    <span class="k">def</span> <span class="nf">plot_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots the spectrum as a check.&quot;&quot;&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20000</span><span class="p">)</span></div></div>
+        
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Micaela Bagley.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>synthgal.filters &mdash; src  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="src  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for synthgal.filters</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">interpolate</span>
+
+
+<div class="viewcode-block" id="Filter"><a class="viewcode-back" href="../../synthgal.html#synthgal.filters.Filter">[docs]</a><span class="k">class</span> <span class="nc">Filter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class to define a broadband filter curve.</span>
+
+<span class="sd">    The filter transmission curve is read in, normalized, and interpolated</span>
+<span class="sd">    onto a finer-resolution wavelength array. </span>
+<span class="sd">    In :meth:`Filter.calc_synphot`, the spectrum is interpolated </span>
+<span class="sd">    to the same wavelength array. The spectrum and the filter used to</span>
+<span class="sd">    calcuate the broadband photometry therefore have the same wavelength</span>
+<span class="sd">    resolution.</span>
+
+<span class="sd">    Filter transmission curves are stored in the ``configs`` directory</span>
+<span class="sd">    and are called ``[filter].txt``. Available `HST`/WFC3 filters are:</span>
+
+<span class="sd">        - F110W </span>
+<span class="sd">        - F160W </span>
+<span class="sd">        - F140W</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wave_array (float): Wavelength array for interpolation of </span>
+<span class="sd">            filters and SED templates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">wave_array</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wave_array</span> <span class="o">=</span> <span class="n">wave_array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filt</span> <span class="o">=</span> <span class="n">filt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_transmission</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_filt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filt</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Filter.interp_spectrum"><a class="viewcode-back" href="../../synthgal.html#synthgal.filters.Filter.interp_spectrum">[docs]</a>    <span class="k">def</span> <span class="nf">interp_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Interpolates spectrum to a finer resolution wavelength array.</span>
+
+<span class="sd">        Values outside the range of the input wavelength array are set to zero.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wave (float): Input wavelength array</span>
+<span class="sd">            flux (float): Input flux array</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (float): Flux array interpolated onto higher-res wavelength array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wave_array</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Filter.read_filt"><a class="viewcode-back" href="../../synthgal.html#synthgal.filters.Filter.read_filt">[docs]</a>    <span class="k">def</span> <span class="nf">read_filt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads in the filter transmission curve. </span>
+
+<span class="sd">        :func:`read_filt` normalizes the transmission curve and calls </span>
+<span class="sd">        :func:`interp_spectrum` to interpolate it to a finer resolution </span>
+<span class="sd">        wavelength array.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filt (str): Filter ID</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            transmission (float): Interpolated filter transmission curve</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;configs&#39;</span><span class="p">,</span> <span class="n">filt</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span><span class="p">))</span>
+        <span class="n">wave</span> <span class="o">=</span> <span class="n">d</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">d</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># normalize the transmission curve</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">wave</span><span class="p">)</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">flux</span> <span class="o">/</span> <span class="n">norm</span>
+        <span class="c1"># interpolate transmission curve to a finer wavelength resolution </span>
+        <span class="n">transmission</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_spectrum</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">transmission</span></div>
+
+
+<div class="viewcode-block" id="Filter.calc_synphot"><a class="viewcode-back" href="../../synthgal.html#synthgal.filters.Filter.calc_synphot">[docs]</a>    <span class="k">def</span> <span class="nf">calc_synphot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">redshift</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the flux density of a spectrum in a broad band filter.</span>
+
+<span class="sd">        The mean flux density in a broad passband, :math:`P(\lambda)`, </span>
+<span class="sd">        is defined as:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">        </span>
+<span class="sd">           f_{\lambda}(P) = \\frac{\int P_{\lambda} \\ f_{\lambda} \\ \lambda \\ \mathrm{ d}\lambda}{\int P_{\lambda} \\ \lambda \\ \mathrm{ d}\lambda}</span>
+<span class="sd">        </span>
+<span class="sd">        The pivot wavelength of the filter is then:</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">           \lambda_p(P) = \sqrt{\\frac{\int P(\lambda) \lambda \mathrm{ d}\lambda}{\int P(\lambda) \mathrm{ d}\lambda / \lambda}}</span>
+
+<span class="sd">        (See the `Synphot manual &lt;http://www.stsci.edu/institute/software_hardware/stsdas/synphot/SynphotManual.pdf&gt;`_)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wave (float): Rest frame wavelength array of spectrum</span>
+<span class="sd">            flux (float): Flux array of spectrum</span>
+<span class="sd">            redshift (float): Source redshift</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (tuple): A tuple containing:</span>
+<span class="sd">                pivot (float): The pivot wavelength of the filter</span>
+<span class="sd">                flux_density (float): The mean flux density calculated for the broadband filter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<span class="c1">#        # redshift spectrum</span>
+<span class="c1">#        lobs = wave * (1. + redshift)</span>
+
+        <span class="c1"># interpolate spectrum to filter&#39;s wavelength resolution</span>
+        <span class="n">spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_spectrum</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">flux</span><span class="p">)</span>
+
+        <span class="n">func1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_transmission</span> <span class="o">*</span> <span class="n">spectrum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wave_array</span>
+        <span class="n">func2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_transmission</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wave_array</span>
+        <span class="n">func3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_transmission</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">wave_array</span>
+
+        <span class="n">flux_density</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">func1</span><span class="p">)</span> <span class="o">/</span> <span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">func2</span><span class="p">)</span>
+
+        <span class="c1"># pivot wavelength of filter</span>
+        <span class="n">pivot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">func2</span><span class="p">)</span> <span class="o">/</span> <span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">func3</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">pivot</span><span class="p">,</span> <span class="n">flux_density</span></div></div>
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Micaela Bagley.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>synthgal package &mdash; src  documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="src  documentation" href="index.html" />
+    <link rel="prev" title="Welcome to src’s documentation!" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="synthgal-package">
+<h1>synthgal package<a class="headerlink" href="#synthgal-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="synthgal-create-sims-module">
+<h2>synthgal.create_sims module<a class="headerlink" href="#synthgal-create-sims-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-synthgal.filters">
+<span id="synthgal-filters-module"></span><h2>synthgal.filters module<a class="headerlink" href="#module-synthgal.filters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="synthgal.filters.Filter">
+<em class="property">class </em><code class="descclassname">synthgal.filters.</code><code class="descname">Filter</code><span class="sig-paren">(</span><em>filt</em>, <em>wave_array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A class to define a broadband filter curve.</p>
+<p>The filter transmission curve is read in, normalized, and interpolated
+onto a finer-resolution wavelength array. 
+In <a class="reference internal" href="#synthgal.filters.Filter.calc_synphot" title="synthgal.filters.Filter.calc_synphot"><code class="xref py py-meth docutils literal"><span class="pre">Filter.calc_synphot()</span></code></a>, the spectrum is interpolated 
+to the same wavelength array. The spectrum and the filter used to
+calcuate the broadband photometry therefore have the same wavelength
+resolution.</p>
+<p>Filter transmission curves are stored in the <code class="docutils literal"><span class="pre">configs</span></code> directory
+and are called <code class="docutils literal"><span class="pre">[filter].txt</span></code>. Available <cite>HST</cite>/WFC3 filters are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>F110W</li>
+<li>F160W</li>
+<li>F140W</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>wave_array (float): Wavelength array for interpolation of </dt>
+<dd>filters and SED templates</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="synthgal.filters.Filter.calc_synphot">
+<code class="descname">calc_synphot</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em>, <em>redshift</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.calc_synphot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.calc_synphot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the flux density of a spectrum in a broad band filter.</p>
+<p>The mean flux density in a broad passband, , 
+is defined as:</p>
+<p>The pivot wavelength of the filter is then:</p>
+<p>(See the <a class="reference external" href="http://www.stsci.edu/institute/software_hardware/stsdas/synphot/SynphotManual.pdf">Synphot manual</a>)</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>wave (float): Rest frame wavelength array of spectrum
+flux (float): Flux array of spectrum
+redshift (float): Source redshift</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>(tuple): A tuple containing:</dt>
+<dd>pivot (float): The pivot wavelength of the filter
+flux_density (float): The mean flux density calculated for the broadband filter</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.filters.Filter.interp_spectrum">
+<code class="descname">interp_spectrum</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.interp_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.interp_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolates spectrum to a finer resolution wavelength array.</p>
+<p>Values outside the range of the input wavelength array are set to zero.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>wave (float): Input wavelength array
+flux (float): Input flux array</dd>
+<dt>Returns:</dt>
+<dd>(float): Flux array interpolated onto higher-res wavelength array</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.filters.Filter.read_filt">
+<code class="descname">read_filt</code><span class="sig-paren">(</span><em>filt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.read_filt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.read_filt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in the filter transmission curve.</p>
+<p><a class="reference internal" href="#synthgal.filters.Filter.read_filt" title="synthgal.filters.Filter.read_filt"><code class="xref py py-func docutils literal"><span class="pre">read_filt()</span></code></a> normalizes the transmission curve and calls 
+<a class="reference internal" href="#synthgal.filters.Filter.interp_spectrum" title="synthgal.filters.Filter.interp_spectrum"><code class="xref py py-func docutils literal"><span class="pre">interp_spectrum()</span></code></a> to interpolate it to a finer resolution 
+wavelength array.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filt (str): Filter ID</dd>
+<dt>Returns:</dt>
+<dd>transmission (float): Interpolated filter transmission curve</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="synthgal-runaxesim-module">
+<h2>synthgal.runaxesim module<a class="headerlink" href="#synthgal-runaxesim-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="synthgal-synthgal-module">
+<h2>synthgal.synthgal module<a class="headerlink" href="#synthgal-synthgal-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-synthgal.template">
+<span id="synthgal-template-module"></span><h2>synthgal.template module<a class="headerlink" href="#module-synthgal.template" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="synthgal.template.Template">
+<em class="property">class </em><code class="descclassname">synthgal.template.</code><code class="descname">Template</code><span class="sig-paren">(</span><em>metallicity</em>, <em>flux</em>, <em>ew</em>, <em>redshift</em>, <em>add_lines</em>, <em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A class to read in BC03 templates.</p>
+<p>BC03 templates are stored in the <code class="docutils literal"><span class="pre">synthsrc/highztemplates</span></code> directory 
+and are called <code class="docutils literal"><span class="pre">[IMF]_[metal]_[SFH].fits</span></code>, where</p>
+<ul class="simple">
+<li>IMF is either <cite>salp</cite> or <cite>chab</cite> for Salpeter and Chabrier initial
+mass functions, respectively;</li>
+<li>metal is the metallicity ranging from <cite>m22</cite> to <cite>m62</cite> (solar);</li>
+<li>SFH is one of <cite>tau0p01</cite>, <cite>tau0p50</cite>, and <cite>tau5p00</cite>, for exponentially
+declining star formation histories with characteristic timescales
+of 0.01, 0.5, and 5 Gyr, respectively.</li>
+</ul>
+<dl class="method">
+<dt id="synthgal.template.Template.add_emission_lines">
+<code class="descname">add_emission_lines</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.add_emission_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.add_emission_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Line ratios are with respect to Hbeta. 
+Assume Case B for ne = 1e2 cm^-3 and Te = 10000K: Halpha/Hbeta = 2.86</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.template.Template.find_thing">
+<code class="descname">find_thing</code><span class="sig-paren">(</span><em>array</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.find_thing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.find_thing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the array index of the element closest to value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.template.Template.normalize_template">
+<code class="descname">normalize_template</code><span class="sig-paren">(</span><em>wave</em>, <em>template_flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.normalize_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.normalize_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="synthgal.template.Template.plot_spectrum">
+<code class="descname">plot_spectrum</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.plot_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.plot_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the spectrum as a check.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.template.Template.read_template">
+<code class="descname">read_template</code><span class="sig-paren">(</span><em>plotcheck=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.read_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.read_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in the BC03 template with the given metallicity.</p>
+<p>Each template FITS table</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="synthgal.template.Template.write_template">
+<code class="descname">write_template</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.write_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.write_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-synthgal">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-synthgal" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">synthgal package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#synthgal-create-sims-module">synthgal.create_sims module</a></li>
+<li><a class="reference internal" href="#module-synthgal.filters">synthgal.filters module</a></li>
+<li><a class="reference internal" href="#synthgal-runaxesim-module">synthgal.runaxesim module</a></li>
+<li><a class="reference internal" href="#synthgal-synthgal-module">synthgal.synthgal module</a></li>
+<li><a class="reference internal" href="#module-synthgal.template">synthgal.template module</a></li>
+<li><a class="reference internal" href="#module-synthgal">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to src&#8217;s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/synthgal.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Micaela Bagley.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/synthgal.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
