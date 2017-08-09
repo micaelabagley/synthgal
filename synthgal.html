@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>synthgal package &mdash; src  documentation</title>
+  <title>synthgal package &mdash; synthgal  documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="src  documentation" href="index.html"/>
+    <link rel="top" title="synthgal  documentation" href="index.html"/>
         <link rel="prev" title="Welcome to src’s documentation!" href="index.html"/> 
 
   
@@ -49,7 +49,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> src
+            <a href="index.html" class="icon icon-home"> synthgal
           
 
           
@@ -81,7 +81,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#synthgal-create-sims-module">synthgal.create_sims module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-synthgal.filters">synthgal.filters module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#synthgal-runaxesim-module">synthgal.runaxesim module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-synthgal.runaxesim">synthgal.runaxesim module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#synthgal-synthgal-module">synthgal.synthgal module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-synthgal.template">synthgal.template module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-synthgal">Module contents</a></li>
@@ -100,7 +100,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">src</a>
+        <a href="index.html">synthgal</a>
       </nav>
 
 
@@ -147,8 +147,8 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A class to define a broadband filter curve.</p>
 <p>The filter transmission curve is read in, normalized, and interpolated
-onto a finer-resolution wavelength array. 
-In <a class="reference internal" href="#synthgal.filters.Filter.calc_synphot" title="synthgal.filters.Filter.calc_synphot"><code class="xref py py-meth docutils literal"><span class="pre">Filter.calc_synphot()</span></code></a>, the spectrum is interpolated 
+onto a finer-resolution wavelength array.
+In <a class="reference internal" href="#synthgal.filters.Filter.calc_synphot" title="synthgal.filters.Filter.calc_synphot"><code class="xref py py-meth docutils literal"><span class="pre">Filter.calc_synphot()</span></code></a>, the spectrum is interpolated
 to the same wavelength array. The spectrum and the filter used to
 calcuate the broadband photometry therefore have the same wavelength
 resolution.</p>
@@ -161,35 +161,52 @@ and are called <code class="docutils literal"><span class="pre">[filter].txt</sp
 <li>F140W</li>
 </ul>
 </div></blockquote>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>wave_array (float): Wavelength array for interpolation of </dt>
-<dd>filters and SED templates</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wave_array</strong> (<em>float</em>) &#8211; Wavelength array for interpolation of
+filters and SED templates</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="synthgal.filters.Filter.calc_synphot">
 <code class="descname">calc_synphot</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em>, <em>redshift</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.calc_synphot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.calc_synphot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the flux density of a spectrum in a broad band filter.</p>
-<p>The mean flux density in a broad passband, , 
+<p>The mean flux density in a broad passband, <span class="math">\(P(\lambda)\)</span>,
 is defined as:</p>
+<div class="math">
+\[f_{\lambda}(P) = \frac{\int P_{\lambda} \ f_{\lambda} \ \lambda \ \mathrm{ d}\lambda}{\int P_{\lambda} \ \lambda \ \mathrm{ d}\lambda}\]</div>
 <p>The pivot wavelength of the filter is then:</p>
+<div class="math">
+\[\lambda_p(P) = \sqrt{\frac{\int P(\lambda) \lambda \mathrm{ d}\lambda}{\int P(\lambda) \mathrm{ d}\lambda / \lambda}}\]</div>
 <p>(See the <a class="reference external" href="http://www.stsci.edu/institute/software_hardware/stsdas/synphot/SynphotManual.pdf">Synphot manual</a>)</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>wave (float): Rest frame wavelength array of spectrum
-flux (float): Flux array of spectrum
-redshift (float): Source redshift</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>(tuple): A tuple containing:</dt>
-<dd>pivot (float): The pivot wavelength of the filter
-flux_density (float): The mean flux density calculated for the broadband filter</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wave</strong> (<em>float</em>) &#8211; Rest frame wavelength array of spectrum</li>
+<li><strong>flux</strong> (<em>float</em>) &#8211; Flux array of spectrum</li>
+<li><strong>redshift</strong> (<em>float</em>) &#8211; Source redshift</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>A tuple containing:</dt>
+<dd><p class="first last">pivot (float): The pivot wavelength of the filter
+flux_density (float): The mean flux density calculated for the broadband filter</p>
 </dd>
 </dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(tuple)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -197,35 +214,72 @@ flux_density (float): The mean flux density calculated for the broadband filter<
 <code class="descname">interp_spectrum</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.interp_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.interp_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolates spectrum to a finer resolution wavelength array.</p>
 <p>Values outside the range of the input wavelength array are set to zero.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>wave (float): Input wavelength array
-flux (float): Input flux array</dd>
-<dt>Returns:</dt>
-<dd>(float): Flux array interpolated onto higher-res wavelength array</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wave</strong> (<em>float</em>) &#8211; Input wavelength array</li>
+<li><strong>flux</strong> (<em>float</em>) &#8211; Input flux array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Flux array interpolated onto higher-res wavelength array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="synthgal.filters.Filter.read_filt">
 <code class="descname">read_filt</code><span class="sig-paren">(</span><em>filt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/filters.html#Filter.read_filt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.filters.Filter.read_filt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads in the filter transmission curve.</p>
-<p><a class="reference internal" href="#synthgal.filters.Filter.read_filt" title="synthgal.filters.Filter.read_filt"><code class="xref py py-func docutils literal"><span class="pre">read_filt()</span></code></a> normalizes the transmission curve and calls 
-<a class="reference internal" href="#synthgal.filters.Filter.interp_spectrum" title="synthgal.filters.Filter.interp_spectrum"><code class="xref py py-func docutils literal"><span class="pre">interp_spectrum()</span></code></a> to interpolate it to a finer resolution 
+<p><a class="reference internal" href="#synthgal.filters.Filter.read_filt" title="synthgal.filters.Filter.read_filt"><code class="xref py py-func docutils literal"><span class="pre">read_filt()</span></code></a> normalizes the transmission curve and calls
+<a class="reference internal" href="#synthgal.filters.Filter.interp_spectrum" title="synthgal.filters.Filter.interp_spectrum"><code class="xref py py-func docutils literal"><span class="pre">interp_spectrum()</span></code></a> to interpolate it to a finer resolution
 wavelength array.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>filt (str): Filter ID</dd>
-<dt>Returns:</dt>
-<dd>transmission (float): Interpolated filter transmission curve</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filt</strong> (<em>str</em>) &#8211; Filter ID</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>transmission</strong> &#8211; Interpolated filter transmission curve</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
 
 </div>
-<div class="section" id="synthgal-runaxesim-module">
-<h2>synthgal.runaxesim module<a class="headerlink" href="#synthgal-runaxesim-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-synthgal.runaxesim">
+<span id="synthgal-runaxesim-module"></span><h2>synthgal.runaxesim module<a class="headerlink" href="#module-synthgal.runaxesim" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="synthgal.runaxesim.create_spec_list">
+<code class="descclassname">synthgal.runaxesim.</code><code class="descname">create_spec_list</code><span class="sig-paren">(</span><em>field</em>, <em>depth</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/runaxesim.html#create_spec_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.runaxesim.create_spec_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="synthgal.runaxesim.main">
+<code class="descclassname">synthgal.runaxesim.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/runaxesim.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.runaxesim.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="synthgal.runaxesim.runaxesim">
+<code class="descclassname">synthgal.runaxesim.</code><code class="descname">runaxesim</code><span class="sig-paren">(</span><em>field</em>, <em>grism</em>, <em>dfilt</em>, <em>gexpt=0</em>, <em>dexpt=0</em>, <em>tpass_flux=None</em>, <em>extraction='NO'</em>, <em>depth='deep'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/runaxesim.html#runaxesim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.runaxesim.runaxesim" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="synthgal.runaxesim.sort_numeric">
+<code class="descclassname">synthgal.runaxesim.</code><code class="descname">sort_numeric</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/runaxesim.html#sort_numeric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.runaxesim.sort_numeric" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="synthgal-synthgal-module">
 <h2>synthgal.synthgal module<a class="headerlink" href="#synthgal-synthgal-module" title="Permalink to this headline">¶</a></h2>
@@ -237,7 +291,7 @@ wavelength array.</p>
 <em class="property">class </em><code class="descclassname">synthgal.template.</code><code class="descname">Template</code><span class="sig-paren">(</span><em>metallicity</em>, <em>flux</em>, <em>ew</em>, <em>redshift</em>, <em>add_lines</em>, <em>output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A class to read in BC03 templates.</p>
-<p>BC03 templates are stored in the <code class="docutils literal"><span class="pre">synthsrc/highztemplates</span></code> directory 
+<p>BC03 templates are stored in the <code class="docutils literal"><span class="pre">synthsrc/highztemplates</span></code> directory
 and are called <code class="docutils literal"><span class="pre">[IMF]_[metal]_[SFH].fits</span></code>, where</p>
 <ul class="simple">
 <li>IMF is either <cite>salp</cite> or <cite>chab</cite> for Salpeter and Chabrier initial
@@ -250,7 +304,7 @@ of 0.01, 0.5, and 5 Gyr, respectively.</li>
 <dl class="method">
 <dt id="synthgal.template.Template.add_emission_lines">
 <code class="descname">add_emission_lines</code><span class="sig-paren">(</span><em>wave</em>, <em>flux</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/synthgal/template.html#Template.add_emission_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synthgal.template.Template.add_emission_lines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Line ratios are with respect to Hbeta. 
+<dd><p>Line ratios are with respect to Hbeta.
 Assume Case B for ne = 1e2 cm^-3 and Te = 10000K: Halpha/Hbeta = 2.86</p>
 </dd></dl>
 
@@ -339,6 +393,7 @@ Assume Case B for ne = 1e2 cm^-3 and Te = 10000K: Halpha/Hbeta = 2.86</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
   
 
